@@ -180,7 +180,7 @@ export default function Main() {
               </h3>
             </div>
 
-            <div className="max-w-md mx-auto p-6 border rounded-xl mb-9.5 bg-[#247478] text-white">
+            <div className="max-w-md mx-auto p-6 border rounded-xl mb-9 bg-[#247478] text-white">
               <input
                 type="text"
                 placeholder="Username"
@@ -291,7 +291,7 @@ export default function Main() {
             <div
               ref={cardRef}
               style={{
-                width: "400px", // fixed width for export
+                width: "14rem", // fixed width for export
                 padding: "24px",
                 backgroundColor: backgroundColor,
                 borderRadius: "16px",
