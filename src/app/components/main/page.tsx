@@ -18,23 +18,18 @@ type UsersDB = {
 };
 
 export default function Main() {
-  // Auth & user state
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [currentUser, setCurrentUser] = useState<string | null>(null);
   const [error, setError] = useState("");
-
-  // Profile data
   const [profileName, setProfileName] = useState("");
   const [description, setDescription] = useState("");
-  const [backgroundColor, setBackgroundColor] = useState("#ffffff");
-  const [textColor, setTextColor] = useState("#247478"); // default text color
-
+  const [backgroundColor, setBackgroundColor] = useState("#111827");
+  const [textColor, setTextColor] = useState("#f3f4f6");
   const [loading, setLoading] = useState(false);
 
   const cardRef = useRef<HTMLDivElement>(null);
 
-  // Load users DB from localStorage
   const getUsersDB = (): UsersDB => {
     try {
       const stored = localStorage.getItem("profilo_users");
@@ -43,12 +38,10 @@ export default function Main() {
     return {};
   };
 
-  // Save users DB to localStorage
   const setUsersDB = (db: UsersDB) => {
     localStorage.setItem("profilo_users", JSON.stringify(db));
   };
 
-  // Save current user's profile data to localStorage
   const saveUserData = (username: string, data: UserData) => {
     const db = getUsersDB();
     if (db[username]) {
@@ -57,7 +50,6 @@ export default function Main() {
     }
   };
 
-  // Load current user's profile data from localStorage
   const loadUserData = (username: string) => {
     const db = getUsersDB();
     if (db[username]) {
@@ -65,11 +57,10 @@ export default function Main() {
       setProfileName(data.profileName);
       setDescription(data.description);
       setBackgroundColor(data.backgroundColor);
-      setTextColor(data.textColor || "#247478");
+      setTextColor(data.textColor || "#f3f4f6");
     }
   };
 
-  // Handle signup
   const handleSignup = () => {
     setError("");
     if (!username || !password) {
@@ -86,21 +77,16 @@ export default function Main() {
       data: {
         profileName: "",
         description: "",
-        backgroundColor: "#ffffff",
-        textColor: "#247478",
+        backgroundColor: "#111827",
+        textColor: "#f3f4f6",
       },
     };
     setUsersDB(db);
     setCurrentUser(username);
-    setProfileName("");
-    setDescription("");
-    setBackgroundColor("#ffffff");
-    setTextColor("#247478");
     setUsername("");
     setPassword("");
   };
 
-  // Handle login
   const handleLogin = () => {
     setError("");
     if (!username || !password) {
@@ -122,16 +108,14 @@ export default function Main() {
     setPassword("");
   };
 
-  // Handle logout
   const handleLogout = () => {
     setCurrentUser(null);
     setProfileName("");
     setDescription("");
-    setBackgroundColor("#ffffff");
-    setTextColor("#247478");
+    setBackgroundColor("#111827");
+    setTextColor("#f3f4f6");
   };
 
-  // Save profile changes automatically when any profile data changes and user is logged in
   useEffect(() => {
     if (currentUser) {
       saveUserData(currentUser, {
@@ -145,12 +129,38 @@ export default function Main() {
 
   const saveCardAsImage = async () => {
     if (!cardRef.current) return;
-
     try {
       setLoading(true);
-      await new Promise((res) => setTimeout(res, 200)); // wait for styles to apply
 
-      const dataUrl = await htmlToImage.toPng(cardRef.current);
+      const node = cardRef.current;
+      const rect = node.getBoundingClientRect();
+
+      console.log("Card width:", rect.width);
+      console.log("Card height:", rect.height);
+
+      // Remove potential transform/overflow issues
+      const originalOverflow = node.style.overflow;
+      const originalTransform = node.style.transform;
+
+      node.style.overflow = "visible";
+      node.style.transform = "none";
+
+      // Small wait to apply styles
+      await new Promise((r) => setTimeout(r, 50));
+
+      // Generate PNG with explicit dimensions & pixel ratio for sharpness
+      const dataUrl = await htmlToImage.toPng(node, {
+        width: rect.width,
+        height: rect.height,
+        pixelRatio: 2,
+        style: {
+          overflow: "visible",
+          transform: "none",
+        },
+      });
+
+      node.style.overflow = originalOverflow;
+      node.style.transform = originalTransform;
 
       const link = document.createElement("a");
       link.download = `${profileName || "profile-card"}.png`;
@@ -158,175 +168,163 @@ export default function Main() {
       link.click();
     } catch (err) {
       console.error("Error saving image:", err);
-      alert("Oops, something went wrong while saving the image.");
+      alert("Error while saving the image.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="w-full max-w-7xl mx-auto mt-24 p-5 px-4 overflow-x-hidden">
-      <div className="max-w-4xl mx-auto px-4">
-        <div className="flex justify-center mb-20">
-          <h1 className="font-bold text-5xl">Profilo</h1>
-        </div>
+    <div className="min-h-screen w-full bg-gradient-to-br from-gray-900 via-black to-gray-800 text-white px-6 py-12">
+      <div className="max-w-4xl mx-auto">
+        <h1 className="text-center text-5xl font-bold mb-16 tracking-wide text-white drop-shadow-xl">
+          Profilo
+        </h1>
 
         {!currentUser ? (
-          <>
-            <div className="flex justify-center mb-10 text-center">
-              <h3>
-                Create an account or login to save and edit your profile card
-                anytime.
-              </h3>
-            </div>
+          <div className="bg-white/5 backdrop-blur-md rounded-2xl p-8 shadow-lg max-w-md mx-auto border border-gray-700">
+            <h2 className="text-2xl mb-6 text-center font-semibold text-gray-100">
+              Welcome
+            </h2>
 
-            <div className="max-w-md mx-auto p-6 border rounded-xl mb-9 bg-[#247478] text-white">
-              <input
-                type="text"
-                placeholder="Username"
-                className="w-full mb-3 p-2 text-black bg-white border-0.5 rounded"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
+            <input
+              type="text"
+              placeholder="Username"
+              className="w-full mb-4 p-3 rounded-lg bg-gray-800 text-white placeholder-gray-400 border border-gray-700 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              disabled={loading}
+            />
+            <input
+              type="password"
+              placeholder="Password"
+              className="w-full mb-4 p-3 rounded-lg bg-gray-800 text-white placeholder-gray-400 border border-gray-700 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              disabled={loading}
+            />
+
+            {error && (
+              <p className="text-red-400 text-sm mb-4 text-center font-medium">
+                {error}
+              </p>
+            )}
+
+            <div className="flex gap-4 justify-center">
+              <button
+                onClick={handleLogin}
                 disabled={loading}
-              />
-              <input
-                type="password"
-                placeholder="Password"
-                className="w-full mb-3 p-2 text-black bg-white border-0.5 rounded"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                className="bg-indigo-600 hover:bg-indigo-700 transition px-4 py-2 rounded-lg font-semibold"
+              >
+                Login
+              </button>
+              <button
+                onClick={handleSignup}
                 disabled={loading}
-              />
-              {error && (
-                <p className="text-red-400 mb-3 text-center font-semibold">
-                  {error}
-                </p>
-              )}
-              <div className="flex gap-4 justify-center">
-                <button
-                  onClick={handleLogin}
-                  disabled={loading}
-                  className="bg-white text-[#247478] px-4 py-2 rounded font-bold hover:bg-gray-200"
-                >
-                  Login
-                </button>
-                <button
-                  onClick={handleSignup}
-                  disabled={loading}
-                  className="bg-white text-[#247478] px-4 py-2 rounded font-bold hover:bg-gray-200"
-                >
-                  Sign Up
-                </button>
-              </div>
+                className="bg-indigo-600 hover:bg-indigo-700 transition px-4 py-2 rounded-lg font-semibold"
+              >
+                Sign Up
+              </button>
             </div>
-          </>
+          </div>
         ) : (
           <>
-            <div className="flex justify-between items-center mb-6 max-w-md mx-auto">
-              <p className="text-lg font-semibold">Logged in as: {currentUser}</p>
+            <div className="max-w-md mx-auto flex justify-between items-center mb-6">
+              <p className="text-gray-300 text-md">Logged in as: {currentUser}</p>
               <button
                 onClick={handleLogout}
-                className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
+                className="text-red-500 hover:text-red-600 font-semibold"
               >
                 Logout
               </button>
             </div>
 
-            <section className="w-full max-w-xl mx-auto flex justify-center items-center">
-              <form
-                onSubmit={(e) => e.preventDefault()}
-                className="bg-[#247478] border border-gray-300 rounded-xl text-center p-6 w-full max-w-md"
-              >
-                <div className="flex flex-col gap-4">
-                  <div className="flex flex-col items-start">
-                    <label>Name of your Profile Card:</label>
-                    <input
-                      type="text"
-                      placeholder="Text here"
-                      className="bg-white text-black p-2 border rounded-xl w-full"
-                      value={profileName}
-                      onChange={(e) => setProfileName(e.target.value)}
-                      disabled={loading}
-                    />
-                  </div>
+            <div className="bg-white/5 backdrop-blur-md rounded-2xl p-8 shadow-lg max-w-md mx-auto border border-gray-700">
+              <div className="mb-6">
+                <label className="block text-sm text-gray-400 mb-1">
+                  Profile Card Name
+                </label>
+                <input
+                  type="text"
+                  value={profileName}
+                  onChange={(e) => setProfileName(e.target.value)}
+                  disabled={loading}
+                  className="w-full p-3 rounded-lg bg-gray-800 text-white placeholder-gray-400 border border-gray-700 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                />
+              </div>
 
-                  <div className="flex flex-col items-start">
-                    <label>Description:</label>
-                    <input
-                      type="text"
-                      placeholder="Text here"
-                      className="bg-white text-black p-2 border rounded-xl w-full"
-                      value={description}
-                      onChange={(e) => setDescription(e.target.value)}
-                      disabled={loading}
-                    />
-                  </div>
+              <div className="mb-6">
+                <label className="block text-sm text-gray-400 mb-1">
+                  Description
+                </label>
+                <input
+                  type="text"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  disabled={loading}
+                  className="w-full p-3 rounded-lg bg-gray-800 text-white placeholder-gray-400 border border-gray-700 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                />
+              </div>
 
-                  <div className="flex flex-col items-start">
-                    <label>Background Color:</label>
-                    <input
-                      type="color"
-                      className="w-full h-10 rounded-xl border border-gray-300 cursor-pointer"
-                      value={backgroundColor}
-                      onChange={(e) => setBackgroundColor(e.target.value)}
-                      disabled={loading}
-                    />
-                  </div>
+              <div className="mb-6">
+                <label className="block text-sm text-gray-400 mb-1">
+                  Background Color
+                </label>
+                <input
+                  type="color"
+                  value={backgroundColor}
+                  onChange={(e) => setBackgroundColor(e.target.value)}
+                  disabled={loading}
+                  className="w-full h-10 p-1 rounded-lg border border-gray-600 bg-gray-900"
+                />
+              </div>
 
-                  <div className="flex flex-col items-start">
-                    <label>Text Color:</label>
-                    <input
-                      type="color"
-                      className="w-full h-10 rounded-xl border border-gray-300 cursor-pointer"
-                      value={textColor}
-                      onChange={(e) => setTextColor(e.target.value)}
-                      disabled={loading}
-                    />
-                  </div>
-                </div>
-              </form>
-            </section>
-
-            {/* Profile Card Preview */}
+              <div className="mb-6">
+                <label className="block text-sm text-gray-400 mb-1">
+                  Text Color
+                </label>
+                <input
+                  type="color"
+                  value={textColor}
+                  onChange={(e) => setTextColor(e.target.value)}
+                  disabled={loading}
+                  className="w-full h-10 p-1 rounded-lg border border-gray-600 bg-gray-900"
+                />
+              </div>
+            </div>
+            
+            <div className="flex justify-center mt-16">
             <div
               ref={cardRef}
               style={{
-                width: "14rem", // fixed width for export
-                padding: "24px",
-                backgroundColor: backgroundColor,
-                borderRadius: "16px",
-                boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-                marginTop: "4rem",
-                marginLeft: "auto",
-                marginRight: "auto",
-                textAlign: "center",
-                overflow: "visible",
+                backgroundColor,
                 color: textColor,
+                width: "320px",
+                padding: "24px",
+                borderRadius: "16px",
+                textAlign: "center",
+                boxShadow:
+                  "0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05)",
+                border: "1px solid rgba(156, 163, 175, 0.3)",
+                overflow: "visible",
               }}
-              className="select-text"
             >
-              <h2 className="text-3xl font-bold mb-4">{profileName || "Your Name"}</h2>
-              <p>{description || "Your description will appear here."}</p>
+              <h2 style={{ fontSize: "24px", fontWeight: "700", marginBottom: "8px" }}>
+                {profileName || "Your Name"}
+              </h2>
+              <p style={{ fontSize: "14px" }}>{description || "Your description"}</p>
+            </div>
             </div>
 
-            {/* Save as Image Button with rainbow border */}
             <div className="flex justify-center mt-10">
               <button
                 onClick={saveCardAsImage}
                 disabled={loading}
-                className={`relative px-6 py-3 rounded-xl font-bold text-[#014145] bg-white overflow-hidden cursor-pointer select-none ${
-                  loading ? "opacity-50 cursor-not-allowed" : ""
+                className={`relative px-6 py-3 font-bold rounded-lg bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white shadow-lg hover:shadow-pink-500/50 transition-transform duration-300 ${
+                  loading ? "opacity-50 cursor-not-allowed" : "hover:scale-105"
                 }`}
               >
-                <span className="relative z-30">
-                  {loading ? "Saving..." : "Save"}
-                </span>
-
-                {/* Rainbow border */}
-                <span className="absolute -inset-3 rounded-xl bg-[conic-gradient(from_0deg,red,orange,yellow,green,blue,indigo,violet,red)] animate-spin z-10"></span>
-
-                {/* Inner white background */}
-                <span className="absolute inset-[3px] rounded-xl bg-white z-20"></span>
+                {loading ? "Saving..." : "Save as Image"}
               </button>
             </div>
           </>
